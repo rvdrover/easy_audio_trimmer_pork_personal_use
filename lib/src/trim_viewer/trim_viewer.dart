@@ -166,36 +166,47 @@ class TrimViewer extends StatefulWidget {
 }
 
 class _TrimViewerState extends State<TrimViewer> with TickerProviderStateMixin {
-  bool? _isScrollableAllowed;
+  // bool? _isScrollableAllowed;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    // Listen to the stream to update the scrollable state
     widget.trimmer.eventStream.listen((event) async {
       if (event == TrimmerEvent.initialized) {
-        final totalDuration = widget.trimmer.audioPlayer?.duration;
-        if (totalDuration == null) {
-          return;
-        }
-        final maxAudioLength = widget.maxAudioLength;
+        // final totalDuration = widget.trimmer.audioPlayer?.duration;
+        // if (totalDuration == null) {
+        //   return;
+        // }
+        // final maxAudioLength = widget.maxAudioLength;
+        // final paddingFraction = widget.paddingFraction;
 
-        final paddingFraction = widget.paddingFraction;
-        final trimAreaDuration = Duration(
-            milliseconds: (maxAudioLength.inMilliseconds +
-                ((paddingFraction * maxAudioLength.inMilliseconds) * 2)
-                    .toInt()));
+        // final trimAreaDuration = Duration(
+        //   milliseconds: (maxAudioLength.inMilliseconds +
+        //       ((paddingFraction * maxAudioLength.inMilliseconds) * 2)
+        //           .toInt()),
+        // );
 
-        final shouldScroll = trimAreaDuration <= totalDuration &&
-            maxAudioLength.compareTo(const Duration(milliseconds: 0)) != 0;
+        // final shouldScroll = trimAreaDuration <= totalDuration &&
+        //     maxAudioLength.compareTo(const Duration(milliseconds: 0)) != 0;
 
-        setState(() => _isScrollableAllowed = shouldScroll);
+        // Update the scrollable state
+        // setState(() => _isScrollableAllowed = shouldScroll);
+        setState(() {
+          _isInitialized = true;
+        });
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final fixedTrimViewer = FixedTrimViewer(
+    // Show a loading indicator if _isScrollableAllowed is still null
+    // if (_isScrollableAllowed == null|| _isScrollableAllowed==false) {
+    //   return Center(child: CircularProgressIndicator());  // You can replace this with a static trim area widget if preferred
+    // }
+    return _isInitialized == true ? FixedTrimViewer(
       trimmer: widget.trimmer,
       maxAudioLength: widget.maxAudioLength,
       viewerWidth: widget.viewerWidth,
@@ -213,8 +224,6 @@ class _TrimViewerState extends State<TrimViewer> with TickerProviderStateMixin {
       areaProperties: FixedTrimAreaProperties(
         borderRadius: widget.areaProperties.borderRadius,
       ),
-    );
-
-    return _isScrollableAllowed == null ? fixedTrimViewer : const SizedBox();
+    ) : const SizedBox();
   }
 }

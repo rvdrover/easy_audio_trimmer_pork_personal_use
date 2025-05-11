@@ -5,73 +5,81 @@ import 'package:flutter/material.dart';
 
 class FixedBarViewer extends StatelessWidget {
   final File audioFile;
-  final int audioDuration;
+  final int audioDuration; // in milliseconds
   final double barHeight;
-  final double barWeight;
+  final double barWeight; // total width of the waveform view
   final BoxFit fit;
 
   final Color? barColor;
   final Color? backgroundColor;
 
   /// For showing the bars generated from the audio,
-  /// like a frame by frame preview
-  const FixedBarViewer(
-      {Key? key,
-      required this.audioFile,
-      required this.audioDuration,
-      required this.barHeight,
-      required this.barWeight,
-      required this.fit,
-      this.backgroundColor,
-      this.barColor})
-      : super(key: key);
+  /// like a frame-by-frame preview
+  const FixedBarViewer({
+    super.key,
+    required this.audioFile,
+    required this.audioDuration,
+    required this.barHeight,
+    required this.barWeight,
+    required this.fit,
+    this.backgroundColor,
+    this.barColor,
+  });
 
-  Stream<List<int?>> generateBars() async* {
-    List<int> bars = [];
-    Random r = Random();
-    for (int i = 1; i <= barWeight / 5.0; i++) {
-      int number = 1 + r.nextInt(barHeight.toInt() - 1);
-      bars.add(r.nextInt(number));
-      yield bars;
+  /// How many milliseconds each bar represents
+  int get millisecondsPerBar => 100;
+
+  int get barCount => (audioDuration / millisecondsPerBar).ceil();
+
+  Future<List<int>> generateBars(int count) async {
+    final bars = <int>[];
+    final r = Random();
+    for (int i = 0; i < count; i++) {
+      final maxHeight = max(1, barHeight.toInt() - 1);
+      bars.add(r.nextInt(maxHeight));
     }
+    return bars;
   }
 
   @override
   Widget build(BuildContext context) {
-    int i = 0;
-    return StreamBuilder<List<int?>>(
-      stream: generateBars(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          List<int?> bars = snapshot.data!;
-          return Container(
-            color: backgroundColor ?? Colors.white,
-            width: double.infinity,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: bars.map((int? height) {
-                // Color color = i >= barStartPosition / barWidth &&
-                //         i <= barEndPosition / barWidth
-                //     ? widget.wavActiveColor
-                //     : widget.wavDeactiveColor;
-                i++;
-                return Container(
-                  color: barColor ?? Colors.black,
-                  height: height?.toDouble(),
-                  width: 5.0,
-                );
-              }).toList(),
-            ),
-          );
-        } else {
-          return Container(
-            color: Colors.grey[900],
-            height: barHeight,
-            width: double.maxFinite,
-          );
-        }
-      },
-    );
+    return LayoutBuilder(builder: (context, constraints) {
+      final totalWidth = barWeight == 0 ? constraints.maxWidth : barWeight;
+      final count = barCount;
+      final barWidth = totalWidth / count;
+
+      return FutureBuilder<List<int>>(
+        future: generateBars(count),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final bars = snapshot.data!;
+            return Container(
+              color: backgroundColor ?? Colors.white,
+              height: barHeight,
+              width: totalWidth,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: bars.map((height) {
+                  return SizedBox(
+                    width: barWidth,
+                    child: Container(
+                      height: height.toDouble(),
+                      color: barColor ?? Colors.black,
+                    ),
+                  );
+                }).toList(),
+              ),
+            );
+          } else {
+            return Container(
+              color: backgroundColor ?? Colors.grey[900],
+              height: barHeight,
+              width: totalWidth,
+            );
+          }
+        },
+      );
+    });
   }
 }

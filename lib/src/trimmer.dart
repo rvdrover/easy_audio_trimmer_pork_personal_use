@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit_config.dart';
@@ -39,20 +40,43 @@ class Trimmer {
   /// Loads a audio using the path provided.
   ///
   /// Returns the loaded audio file.
-  Future<void> loadAudio({required File audioFile}) async {
-    currentAudioFile = audioFile;
-    if (audioFile.existsSync()) {
-      _audioPlayer = AudioPlayer();
-      await _audioPlayer?.setFilePath((audioFile.path));
+  // Future<void> loadAudio({required File audioFile}) async {
+  //   currentAudioFile = audioFile;
+  //   if (audioFile.existsSync()) {
+  //     _audioPlayer = AudioPlayer();
+  //     await _audioPlayer?.setFilePath((audioFile.path)).then((e){
 
-      _controller.add(TrimmerEvent.initialized);
+  //     });
+
+  //     _controller.add(TrimmerEvent.initialized);
       
 
-      // await _audioPlayer!.).then((_) {
-      //
-      // });
+  //     // await _audioPlayer!.).then((_) {
+  //     //
+  //     // });
+  //   }
+  // }
+  Future<void> loadAudio({required File audioFile}) async {
+  currentAudioFile = audioFile;
+  
+  if (audioFile.existsSync()) {
+    // Initialize the audio player
+    _audioPlayer = AudioPlayer();
+
+    try {
+      // Set the file path for the audio player and await completion
+      await _audioPlayer?.setFilePath(audioFile.path);
+      
+      // Add the initialized event only after the audio has been successfully loaded
+      _controller.add(TrimmerEvent.initialized);
+      log("Audio loaded successfully");
+    } catch (e) {
+      log('Error loading audio: $e');
     }
+  } else {
+    log('Audio file does not exist');
   }
+}
 
   Future<String> _createFolderInAppDocDir(
     String folderName,

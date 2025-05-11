@@ -178,7 +178,7 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
 
   /// Quick access to AudioPlayerController, only not null after [TrimmerEvent.initialized]
   /// has been emitted.
-  AudioPlayer? get audioPlayerController => widget.trimmer.audioPlayer??AudioPlayer();
+  AudioPlayer? get audioPlayerController => widget.trimmer.audioPlayer;
 
   /// Keep track of the drag type, e.g. whether the user drags the left, center or
   /// right part of the frame. Set this in [_onDragStart] when the dragging starts.
@@ -191,116 +191,136 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
   bool _isAnimationControllerDispose = false;
 
   @override
-  void initState() {
-    super.initState();
-    _startCircleSize = widget.editorProperties.circleSize;
-    _endCircleSize = widget.editorProperties.circleSize;
-    _borderRadius = widget.editorProperties.borderRadius;
-    _barViewerH = widget.viewerHeight;
-    log('barViewerW: $_barViewerW');
-    SchedulerBinding.instance.addPostFrameCallback((_) async {
-      final renderBox =
-          _trimmerAreaKey.currentContext?.findRenderObject() as RenderBox?;
-      final trimmerActualWidth = renderBox?.size.width;
-      log('RENDER BOX: $trimmerActualWidth');
-      if (trimmerActualWidth == null) return;
-      _barViewerW = trimmerActualWidth;
+void initState() {
+  super.initState();
+  log('audioFile: ${widget.trimmer.currentAudioFile}');
+
+  // Listen for the initialization event
+  widget.trimmer.eventStream.listen((event) {
+    if (event == TrimmerEvent.initialized) {
       _initializeAudioController();
-      audioPlayerController?.seek(const Duration(milliseconds: 0));
-      _numberOfBars = trimmerActualWidth ~/ _barViewerH;
-      log('numberOfBars: $_numberOfBars');
-      log('barViewerW: $_barViewerW');
-      Duration? totalDuration = audioPlayerController?.duration;
+    }
+  });
 
-      setState(() {
-        _barViewerW = _numberOfBars * _barViewerH;
+  _startCircleSize = widget.editorProperties.circleSize;
+  _endCircleSize = widget.editorProperties.circleSize;
+  _borderRadius = widget.editorProperties.borderRadius;
+  _barViewerH = widget.viewerHeight;
 
-        final FixedBarViewer barWidget = FixedBarViewer(
-          audioFile: _audioFile!,
-          audioDuration: _audioDuration,
-          fit: widget.areaProperties.barFit,
-          barHeight: _barViewerH,
-          barWeight: _barViewerW,
-          backgroundColor: widget.backgroundColor,
-          barColor: widget.barColor,
-        );
-        this.barWidget = barWidget;
+  log('barViewerW: $_barViewerW');
 
-        if (totalDuration == null) {
-          return;
-        }
-
-        if (widget.maxAudioLength > const Duration(milliseconds: 0) &&
-            widget.maxAudioLength < totalDuration) {
-          if (widget.maxAudioLength < totalDuration) {
-            fraction = widget.maxAudioLength.inMilliseconds /
-                totalDuration.inMilliseconds;
-
-            maxLengthPixels = _barViewerW * fraction!;
-          }
-        } else {
-          maxLengthPixels = _barViewerW;
-        }
-
-        _audioEndPos = fraction != null
-            ? _audioDuration.toDouble() * fraction!
-            : _audioDuration.toDouble();
-
-        widget.onChangeEnd!(_audioEndPos);
-
-        _endPos = Offset(
-          maxLengthPixels != null ? maxLengthPixels! : _barViewerW,
-          _barViewerH,
-        );
-
-        // Defining the tween points
-        _linearTween = Tween(begin: _startPos.dx, end: _endPos.dx);
-        _animationController = AnimationController(
-          vsync: this,
-          duration:
-              Duration(milliseconds: (_audioEndPos - _audioStartPos).toInt()),
-        );
-
-        _scrubberAnimation = _linearTween.animate(_animationController!)
-          ..addListener(() {
-            setState(() {});
-          })
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              _animationController!.stop();
-            }
-          });
-      });
-    });
+  // If the audio is already initialized, handle it right away
+  if (widget.trimmer.currentAudioFile != null) {
+    _initializeAudioController();
   }
 
-  Future<void> _initializeAudioController() async {
-    if (_audioFile != null) {
-      audioPlayerController?.playerStateStream.listen((event) {
-        final bool isPlaying = event.playing;
+  // You can continue your post-frame callback logic
+  SchedulerBinding.instance.addPostFrameCallback((_) async {
+    final renderBox = _trimmerAreaKey.currentContext?.findRenderObject() as RenderBox?;
+    final trimmerActualWidth = renderBox?.size.width;
+    log('RENDER BOX: $trimmerActualWidth');
+    if (trimmerActualWidth == null) return;
+    _barViewerW = trimmerActualWidth;
+    _numberOfBars = trimmerActualWidth ~/ _barViewerH;
+    log('numberOfBars: $_numberOfBars');
+    Duration? totalDuration = audioPlayerController?.duration;
 
-        if (!isPlaying) {
-          if (_animationController != null) {
-            if ((_scrubberAnimation?.value ?? 0).toInt() ==
-                (_endPos.dx).toInt()) {
-              _animationController!.reset();
-            }
-            if (!_isAnimationControllerDispose) {
-              _animationController?.stop();
-            }
+    setState(() {
+      _barViewerW = _numberOfBars * _barViewerH;
+       log('_audioFile: ${_audioFile?.path}');
+      final FixedBarViewer barWidgetL = FixedBarViewer(
+        audioFile: _audioFile!,
+        audioDuration: _audioDuration,
+        fit: widget.areaProperties.barFit,
+        barHeight: _barViewerH,
+        barWeight: _barViewerW,
+        backgroundColor: widget.backgroundColor,
+        barColor: widget.barColor,
+      );
+      barWidget = barWidgetL;
 
-            widget.onChangePlaybackState!(false);
-          }
-        } else {
-          widget.onChangePlaybackState!(true);
+      if (totalDuration == null) {
+        return;
+      }
+
+      if (widget.maxAudioLength > const Duration(milliseconds: 0) &&
+          widget.maxAudioLength < totalDuration) {
+        if (widget.maxAudioLength < totalDuration) {
+          fraction = widget.maxAudioLength.inMilliseconds /
+              totalDuration.inMilliseconds;
+          maxLengthPixels = _barViewerW * fraction!;
         }
-      });
+      } else {
+        maxLengthPixels = _barViewerW;
+      }
 
-      audioPlayerController?.positionStream.listen((event) async {
-        final bool isPlaying =
-            audioPlayerController?.playerState.playing??false;
+      _audioEndPos = fraction != null
+          ? _audioDuration.toDouble() * fraction!
+          : _audioDuration.toDouble();
 
-        if (isPlaying) {
+      widget.onChangeEnd!(_audioEndPos);
+
+      _endPos = Offset(
+        maxLengthPixels != null ? maxLengthPixels! : _barViewerW,
+        _barViewerH,
+      );
+
+      // Defining the tween points
+      _linearTween = Tween(begin: _startPos.dx, end: _endPos.dx);
+      _animationController = AnimationController(
+        vsync: this,
+        duration: Duration(milliseconds: (_audioEndPos - _audioStartPos).toInt()),
+      );
+
+      _scrubberAnimation = _linearTween.animate(_animationController!)
+        ..addListener(() {
+          setState(() {});
+        })
+        ..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            _animationController!.stop();
+          }
+        });
+    });
+  });
+}
+  Future<void> _initializeAudioController() async {
+  if (_audioFile != null) {
+    // Ensure that the audioPlayerController is available before proceeding
+    if (audioPlayerController == null) {
+      log('Audio Player Controller is null');
+      return;
+    }
+
+    // Listen to player state changes (playing or paused)
+    audioPlayerController?.playerStateStream.listen((event) {
+      final bool isPlaying = event.playing;
+
+      if (!isPlaying) {
+        if (_animationController != null) {
+          if ((_scrubberAnimation?.value ?? 0).toInt() ==
+              (_endPos.dx).toInt()) {
+            _animationController!.reset();
+          }
+
+          if (!_isAnimationControllerDispose) {
+            _animationController?.stop();
+          }
+
+          widget.onChangePlaybackState!(false); // Notify that audio is paused
+        }
+      } else {
+        widget.onChangePlaybackState!(true); // Notify that audio is playing
+      }
+    });
+
+    // Listen to the position stream and update playback
+    audioPlayerController?.positionStream.listen((event) async {
+      final bool isPlaying = audioPlayerController?.playerState.playing ?? false;
+
+      if (isPlaying) {
+        // Only update state if position has changed significantly
+        if (_currentPosition != event.inMilliseconds) {
           setState(() {
             _currentPosition = event.inMilliseconds;
 
@@ -308,10 +328,12 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
               audioPlayerController?.pause();
               widget.onChangePlaybackState!(false);
 
+              // Stop the animation safely
               if (!_isAnimationControllerDispose) {
                 _animationController?.stop();
               }
             } else {
+              // Start the animation only if it's not already running
               if (!_animationController!.isAnimating) {
                 widget.onChangePlaybackState!(true);
                 _animationController!.forward();
@@ -319,15 +341,20 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
             }
           });
         }
-      });
-      // audioPlayerController.addListener(() async {
+      }
+    });
 
-      // });
+    // Set the volume to maximum
+    audioPlayerController?.setVolume(1.0);
 
-      audioPlayerController?.setVolume(1.0);
-      _audioDuration = (audioPlayerController?.duration)?.inMilliseconds ?? 0;
-    }
+    // Retrieve and set the audio duration in milliseconds
+    _audioDuration = (audioPlayerController?.duration)?.inMilliseconds ?? 0;
+    log('Audio Duration: $_audioDuration');
+  } else {
+    log('No audio file loaded');
   }
+}
+
 
   /// Called when the user starts dragging the frame, on either side on the whole frame.
   /// Determine which [EditorDragType] is used.
