@@ -178,7 +178,7 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
 
   /// Quick access to AudioPlayerController, only not null after [TrimmerEvent.initialized]
   /// has been emitted.
-  AudioPlayer get audioPlayerController => widget.trimmer.audioPlayer!;
+  AudioPlayer get audioPlayerController => widget.trimmer.audioPlayer??AudioPlayer();
 
   /// Keep track of the drag type, e.g. whether the user drags the left, center or
   /// right part of the frame. Set this in [_onDragStart] when the dragging starts.
