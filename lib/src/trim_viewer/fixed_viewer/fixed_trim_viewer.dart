@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:easy_audio_trimmer/src/trim_viewer/trim_area_properties.dart';
 import 'package:easy_audio_trimmer/src/trim_viewer/trim_editor_properties.dart';
 import 'package:easy_audio_trimmer/src/trimmer.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:just_audio/just_audio.dart';
 
 import '../../utils/duration_style.dart';
 import '../../utils/editor_drag_type.dart';
@@ -210,7 +210,7 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
       _numberOfBars = trimmerActualWidth ~/ _barViewerH;
       log('numberOfBars: $_numberOfBars');
       log('barViewerW: $_barViewerW');
-      Duration? totalDuration = await audioPlayerController?.getDuration();
+      Duration? totalDuration = audioPlayerController?.duration;
 
       setState(() {
         _barViewerW = _numberOfBars * _barViewerH;
@@ -276,8 +276,8 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
 
   Future<void> _initializeAudioController() async {
     if (_audioFile != null) {
-      audioPlayerController?.onPlayerStateChanged.listen((event) {
-        final bool isPlaying = event == PlayerState.playing;
+      audioPlayerController?.playerStateStream.listen((event) {
+        final bool isPlaying = event.playing;
 
         if (!isPlaying) {
           if (_animationController != null) {
@@ -296,9 +296,9 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
         }
       });
 
-      audioPlayerController?.onPositionChanged.listen((event) async {
+      audioPlayerController?.positionStream.listen((event) async {
         final bool isPlaying =
-            audioPlayerController?.state == PlayerState.playing;
+            audioPlayerController?.playerState.playing??false;
 
         if (isPlaying) {
           setState(() {
@@ -325,8 +325,7 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
       // });
 
       audioPlayerController?.setVolume(1.0);
-      _audioDuration =
-          (await audioPlayerController?.getDuration())!.inMilliseconds;
+      _audioDuration = (audioPlayerController?.duration)?.inMilliseconds ?? 0;
     }
   }
 
@@ -476,7 +475,7 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
                               .format(widget.durationStyle),
                           style: widget.durationTextStyle,
                         ),
-                        audioPlayerController?.state == PlayerState.playing
+                        audioPlayerController?.playerState.playing==true
                             ? Text(
                                 Duration(milliseconds: _currentPosition.toInt())
                                     .format(widget.durationStyle),

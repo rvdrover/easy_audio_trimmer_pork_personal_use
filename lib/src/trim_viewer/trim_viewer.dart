@@ -173,7 +173,7 @@ class _TrimViewerState extends State<TrimViewer> with TickerProviderStateMixin {
     super.initState();
     widget.trimmer.eventStream.listen((event) async {
       if (event == TrimmerEvent.initialized) {
-        final totalDuration = await widget.trimmer.audioPlayer!.getDuration();
+        final totalDuration = widget.trimmer.audioPlayer?.duration;
         if (totalDuration == null) {
           return;
         }

@@ -1,3 +1,6 @@
+## 2.0.2+1
+
+* Update to just_audio
 ## 2.0.1+1
 
 * Null value fix.

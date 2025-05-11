@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit_config.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:path/path.dart';
 
 import 'package:flutter/material.dart';
@@ -43,9 +43,10 @@ class Trimmer {
     currentAudioFile = audioFile;
     if (audioFile.existsSync()) {
       _audioPlayer = AudioPlayer();
-      await _audioPlayer?.setSource(DeviceFileSource(audioFile.path));
+      await _audioPlayer?.setFilePath((audioFile.path));
 
       _controller.add(TrimmerEvent.initialized);
+      
 
       // await _audioPlayer!.).then((_) {
       //
@@ -277,24 +278,28 @@ class Trimmer {
   /// Returns a `Future<bool>`, if `true` then audio is playing
   /// otherwise paused.
   Future<bool> audioPlaybackControl({
-    required double startValue,
-    required double endValue,
-  }) async {
-    if (audioPlayer?.state == PlayerState.playing) {
-      await audioPlayer?.pause();
-      return false;
+  required double startValue,
+  required double endValue,
+}) async {
+  final playerState = audioPlayer?.playerState;
+
+  if (playerState?.playing == true) {
+    await audioPlayer?.pause();
+    return false;
+  } else {
+    final currentPosition = audioPlayer?.position.inMilliseconds ?? 0;
+
+    if (currentPosition >= endValue.toInt()) {
+      await audioPlayer?.seek(Duration(milliseconds: startValue.toInt()));
+      await audioPlayer?.play();
+      return true;
     } else {
-      var duration = await audioPlayer!.getCurrentPosition();
-      if ((duration?.inMilliseconds ?? 0) >= endValue.toInt()) {
-        await audioPlayer!.seek(Duration(milliseconds: startValue.toInt()));
-        await audioPlayer!.resume();
-        return true;
-      } else {
-        await audioPlayer!.resume();
-        return true;
-      }
+      await audioPlayer?.play();
+      return true;
     }
   }
+}
+
 
   /// Clean up
   void dispose() {
