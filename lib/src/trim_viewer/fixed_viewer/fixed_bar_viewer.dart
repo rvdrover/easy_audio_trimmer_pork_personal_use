@@ -15,35 +15,38 @@ class FixedBarViewer extends StatelessWidget {
 
   /// For showing the bars generated from the audio,
   /// like a frame by frame preview
-  const FixedBarViewer(
-      {Key? key,
-      required this.audioFile,
-      required this.audioDuration,
-      required this.barHeight,
-      required this.barWeight,
-      required this.fit,
-      this.backgroundColor,
-      this.barColor})
-      : super(key: key);
+  const FixedBarViewer({
+    super.key,
+    required this.audioFile,
+    required this.audioDuration,
+    required this.barHeight,
+    required this.barWeight,
+    required this.fit,
+    this.backgroundColor,
+    this.barColor,
+  });
 
-  Stream<List<int?>> generateBars() async* {
+  // Generate fake bars (stubbed for now - replace with actual waveform later)
+  Future<List<int>> generateBars() async {
     List<int> bars = [];
     Random r = Random();
-    for (int i = 1; i <= barWeight / 5.0; i++) {
+    int count = (barWeight / 5.0).floor(); // bar width = 5.0
+
+    for (int i = 0; i < count; i++) {
       int number = 1 + r.nextInt(barHeight.toInt() - 1);
       bars.add(r.nextInt(number));
-      yield bars;
     }
+    return bars;
   }
 
   @override
   Widget build(BuildContext context) {
     int i = 0;
-    return StreamBuilder<List<int?>>(
-      stream: generateBars(),
+    return FutureBuilder<List<int>>(
+      future: generateBars(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          List<int?> bars = snapshot.data!;
+          List<int> bars = snapshot.data!;
           return Container(
             color: backgroundColor ?? Colors.white,
             width: double.infinity,
@@ -60,6 +63,7 @@ class FixedBarViewer extends StatelessWidget {
                   color: barColor ?? Colors.black,
                   height: height?.toDouble(),
                   width: 5.0,
+                  margin: const EdgeInsets.symmetric(horizontal: 1),
                 );
               }).toList(),
             ),
@@ -68,7 +72,7 @@ class FixedBarViewer extends StatelessWidget {
           return Container(
             color: Colors.grey[900],
             height: barHeight,
-            width: double.maxFinite,
+            width: double.infinity,
           );
         }
       },
