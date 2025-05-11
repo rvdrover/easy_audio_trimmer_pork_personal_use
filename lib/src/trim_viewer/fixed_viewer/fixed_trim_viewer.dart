@@ -178,7 +178,7 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
 
   /// Quick access to AudioPlayerController, only not null after [TrimmerEvent.initialized]
   /// has been emitted.
-  AudioPlayer get audioPlayerController => widget.trimmer.audioPlayer??AudioPlayer();
+  AudioPlayer? get audioPlayerController => widget.trimmer.audioPlayer??AudioPlayer();
 
   /// Keep track of the drag type, e.g. whether the user drags the left, center or
   /// right part of the frame. Set this in [_onDragStart] when the dragging starts.
@@ -206,11 +206,11 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
       if (trimmerActualWidth == null) return;
       _barViewerW = trimmerActualWidth;
       _initializeAudioController();
-      audioPlayerController.seek(const Duration(milliseconds: 0));
+      audioPlayerController?.seek(const Duration(milliseconds: 0));
       _numberOfBars = trimmerActualWidth ~/ _barViewerH;
       log('numberOfBars: $_numberOfBars');
       log('barViewerW: $_barViewerW');
-      Duration? totalDuration = await audioPlayerController.getDuration();
+      Duration? totalDuration = await audioPlayerController?.getDuration();
 
       setState(() {
         _barViewerW = _numberOfBars * _barViewerH;
@@ -276,7 +276,7 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
 
   Future<void> _initializeAudioController() async {
     if (_audioFile != null) {
-      audioPlayerController.onPlayerStateChanged.listen((event) {
+      audioPlayerController?.onPlayerStateChanged.listen((event) {
         final bool isPlaying = event == PlayerState.playing;
 
         if (!isPlaying) {
@@ -296,16 +296,16 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
         }
       });
 
-      audioPlayerController.onPositionChanged.listen((event) async {
+      audioPlayerController?.onPositionChanged.listen((event) async {
         final bool isPlaying =
-            audioPlayerController.state == PlayerState.playing;
+            audioPlayerController?.state == PlayerState.playing;
 
         if (isPlaying) {
           setState(() {
             _currentPosition = event.inMilliseconds;
 
             if (_currentPosition > _audioEndPos.toInt()) {
-              audioPlayerController.pause();
+              audioPlayerController?.pause();
               widget.onChangePlaybackState!(false);
 
               if (!_isAnimationControllerDispose) {
@@ -324,9 +324,9 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
 
       // });
 
-      audioPlayerController.setVolume(1.0);
+      audioPlayerController?.setVolume(1.0);
       _audioDuration =
-          (await audioPlayerController.getDuration())!.inMilliseconds;
+          (await audioPlayerController?.getDuration())!.inMilliseconds;
     }
   }
 
@@ -429,23 +429,23 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
       _endCircleSize = widget.editorProperties.circleSize;
       if (_dragType == EditorDragType.right) {
         audioPlayerController
-            .seek(Duration(milliseconds: _audioEndPos.toInt()));
+            ?.seek(Duration(milliseconds: _audioEndPos.toInt()));
       } else {
         audioPlayerController
-            .seek(Duration(milliseconds: _audioStartPos.toInt()));
+            ?.seek(Duration(milliseconds: _audioStartPos.toInt()));
       }
     });
   }
 
   @override
   void dispose() {
-    audioPlayerController.pause();
+    audioPlayerController?.pause();
 
     _isAnimationControllerDispose = true;
     widget.onChangePlaybackState!(false);
     if (_audioFile != null) {
-      audioPlayerController.setVolume(0.0);
-      audioPlayerController.dispose();
+      audioPlayerController?.setVolume(0.0);
+      audioPlayerController?.dispose();
       widget.onChangePlaybackState!(false);
     }
     _animationController?.dispose();
@@ -476,7 +476,7 @@ class _FixedTrimViewerState extends State<FixedTrimViewer>
                               .format(widget.durationStyle),
                           style: widget.durationTextStyle,
                         ),
-                        audioPlayerController.state == PlayerState.playing
+                        audioPlayerController?.state == PlayerState.playing
                             ? Text(
                                 Duration(milliseconds: _currentPosition.toInt())
                                     .format(widget.durationStyle),
