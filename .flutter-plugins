@@ -1,6 +1,7 @@
 # This is a generated file; do not edit or check into version control.
 audio_session=/Users/ravindu_m/.pub-cache/hosted/pub.dev/audio_session-0.2.1/
-ffmpeg_kit_flutter_new=/Users/ravindu_m/.pub-cache/hosted/pub.dev/ffmpeg_kit_flutter_new-1.1.0/
+ffmpeg_kit_flutter_android=/Users/ravindu_m/.pub-cache/hosted/pub.dev/ffmpeg_kit_flutter_android-1.4.0/
+ffmpeg_kit_flutter_new=/Users/ravindu_m/.pub-cache/hosted/pub.dev/ffmpeg_kit_flutter_new-1.6.1/
 just_audio=/Users/ravindu_m/.pub-cache/hosted/pub.dev/just_audio-0.10.2/
 just_audio_web=/Users/ravindu_m/.pub-cache/hosted/pub.dev/just_audio_web-0.4.15/
 path_provider=/Users/ravindu_m/.pub-cache/hosted/pub.dev/path_provider-2.1.5/

@@ -253,7 +253,7 @@ class Trimmer {
     }
 
     String trimLengthCommand =
-        ' -ss $startPoint -i "$audioPath" -t ${endPoint - startPoint}';
+        ' -ss $startPoint -i "$audioPath" -t ${endPoint - startPoint} -avoid_negative_ts make_zero ';
 
     if (ffmpegCommand == null) {
       command = '$trimLengthCommand -c:a copy ';
